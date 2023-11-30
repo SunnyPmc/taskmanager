@@ -1,27 +1,46 @@
 const Task = require('../models/taskModel')
 const {createError} = require('../utils/error')
+const asyncHandler = require('express-async-handler')
 
-const createTask = async(req, res,next) => {
+
+const getTask = asyncHandler(async(req, res, next) => {
+    try {
+         const tasks = await Task.find({user: req.user.id})
+         res.status(200).json(tasks)
+    } catch (error) {
+        next(error)
+    }
+   
+})
+
+const createTask = asyncHandler(async(req, res,next) => {
     try {
         if(!req.body.text) {
-        // res.status(400).json('Please add a task')
         return next(createError(400, 'Please add a task'))
     }
     const task = await Task.create({
         text: req.body.text,
+        user: req.user.id
     })
     res.status(200).json(task)
     } catch (error) {
         next(error)
     }
     
-}
-const updateTask = async(req, res,next) => {
+})
+const updateTask = asyncHandler(async(req, res,next) => {
     try {
         const task = await Task.findById(req.params.id)
     if(!task) {
-        res.status(400).json('task not found')
+        return next(createError(400,'task not found'))
     }
+    if(!req.user) {
+        return next(createError("user not found"))
+    }
+    if(task.user.toString() !== req.user.id) {
+        return next(createError(401, "user not authorized"))
+    }
+    
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
     })
@@ -30,12 +49,18 @@ const updateTask = async(req, res,next) => {
         next(error)
     }
     
-}
-const deleteTask = async(req, res, next) => {
+})
+const deleteTask = asyncHandler(async(req, res, next) => {
     try {
         const task = await Task.findById(req.params.id)
     if(!task) {
-        res.status(400).json('task not found')
+        return next(createError('task not found'))
+    }
+     if(!req.user) {
+        return next(createError("user not found"))
+    }
+    if(task.user.toString() !== req.user.id) {
+        return next(createError(401, "user not authorized"))
     }
     await Task.deleteOne()
     res.status(200).json({id: req.params.id})
@@ -43,16 +68,8 @@ const deleteTask = async(req, res, next) => {
         next(error)
     }
     
-}
-const getTask = async(req, res, next) => {
-    try {
-         const tasks = await Task.find()
-         res.status(200).json(tasks)
-    } catch (error) {
-        next(error)
-    }
-   
-}
+})
+
 
 module.exports = {
     createTask,

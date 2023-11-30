@@ -2,6 +2,7 @@ const express = require('express')
 const dotenv = require('dotenv').config()
 const connectDB = require('./config/db')
 const taskRoutes = require('./routes/taskRoutes')
+const userRoutes = require('./routes/userRoutes')
 
 connectDB()
 
@@ -11,6 +12,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: false}))
 
 app.use('/api/tasks',taskRoutes )
+app.use('/api/users',userRoutes )
 
 app.use((err, req, res, next) => {
     const errorStatus = err.status || 500
